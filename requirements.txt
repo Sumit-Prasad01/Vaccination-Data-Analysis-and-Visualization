@@ -5,6 +5,7 @@ altair
 ipykernel
 matplotlib
 seaborn
+openpyxl
 
 # Database (PostgreSQL)
 psycopg2-binary
