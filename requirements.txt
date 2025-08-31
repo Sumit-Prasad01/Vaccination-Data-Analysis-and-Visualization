@@ -1,0 +1,11 @@
+pandas 
+numpy 
+plotly
+altair
+ipykernel
+matplotlib
+seaborn
+
+# Database (PostgreSQL)
+psycopg2-binary
+sqlalchemy
