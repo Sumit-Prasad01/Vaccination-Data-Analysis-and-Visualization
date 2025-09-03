@@ -6,6 +6,7 @@ ipykernel
 matplotlib
 seaborn
 openpyxl
+python-dotenv
 
 # Database (PostgreSQL)
 psycopg2-binary

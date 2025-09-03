@@ -18,11 +18,11 @@ df['year'] = pd.to_numeric(df['year'], errors = 'coerce').astype(int)
 
 # Numeric-like columns (schedule may be mixed : numeric + text)
 
-df['schedule'] = df['schedule'].astype(str).str.strip()
+df['schedulerounds'] = df['schedulerounds'].astype(str).str.strip()
 
 # Fill NaN in categorical columns with "Unknown"
 
-for col in ['iso_3_code', 'country', 'who_region', 'vaccinecode',
+for col in ['iso_3_code', 'countryname', 'who_region', 'vaccinecode',
             'vaccine_description', 'targetpop', 'targetpop_description',
             'geoarea', 'ageadministered', 'sourcecomment']:
     df[col] = df[col].fillna("Unknown").astype(str).str.strip()
@@ -34,7 +34,7 @@ df.drop_duplicates(inplace = True)
 # Ensure Consistency 
 
 df['iso_3_code'] = df['iso_3_code'].str.upper()
-df['country'] = df['country'].str.title()
+df['countryname'] = df['countryname'].str.title()
 df['who_region'] = df['who_region'].str.upper()
 df['vaccinecode'] = df['vaccinecode'].str.upper()
 
@@ -50,7 +50,7 @@ df['is_risk_group'] = df['targetpop'].apply(lambda x : 1 if 'RISK' in x.upper() 
 
 # Create numeric schedule if possible 
 
-df['schedule_num'] = pd.to_numeric(df['schedule'], errors='coerce')
+df['schedule_num'] = pd.to_numeric(df['schedulerounds'], errors='coerce')
 
 print("Data cleaning and processing data.")
 
