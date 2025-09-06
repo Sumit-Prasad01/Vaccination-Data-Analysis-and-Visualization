@@ -1,7 +1,5 @@
-import sqlalchemy
-from sqlalchemy import create_engine, text
-import psycopg2
 import os
+from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,44 +11,32 @@ PASSWORD = os.getenv("PASSWORD")
 HOST = os.getenv("HOST")
 PORT = os.getenv("PORT")
 DB_NAME = os.getenv("DBNAME")
-SCHEMA_PATH = os.getenv("SCHEMA_PATH")
 
-# 2. Create database (using psycopg2 because SQLAlchemy cannot create DB directly)
+# First connect to default database
+default_engine = create_engine(f"postgresql+psycopg2://{USER}:{PASSWORD}@{HOST}:{PORT}/postgres")
 
-conn = psycopg2.connect(
-    dbname="postgres",
-    user=USER,
-    password=PASSWORD,
-    host=HOST,
-    port=PORT
-)
-conn.autocommit = True
-cur = conn.cursor()
+with default_engine.connect() as connection:
+    connection.execute(text("commit"))  # end transaction
+    # Terminate sessions
+    connection.execute(text(f"""
+        SELECT pg_terminate_backend(pg_stat_activity.pid)
+        FROM pg_stat_activity
+        WHERE pg_stat_activity.datname = '{DB_NAME}'
+        AND pid <> pg_backend_pid();
+    """))
+    # Drop + create
+    connection.execute(text(f"DROP DATABASE IF EXISTS {DB_NAME}"))
+    connection.execute(text(f"CREATE DATABASE {DB_NAME}"))
 
-# Drop and recreate the database
-cur.execute(f"DROP DATABASE IF EXISTS {DB_NAME}")
-cur.execute(f"CREATE DATABASE {DB_NAME}")
-print(f"Database '{DB_NAME}' created successfully!")
+print(f" Database '{DB_NAME}' created successfully!")
 
-cur.close()
-conn.close()
+# Now reconnect to the new DB (fresh engine)
+engine = create_engine(f"postgresql+psycopg2://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB_NAME}")
 
-
-# 3. Connect to vaccination_db using SQLAlchemy
-
-DATABASE_URL = f"postgresql+psycopg2://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB_NAME}"
-engine = create_engine(DATABASE_URL)
-
+# Run schema
 with engine.connect() as connection:
-    
-    # 4. Load schema from external file
-    
-    with open(SCHEMA_PATH, "r") as f:
+    with open("sql/schema.sql", "r") as f:
         schema_sql = f.read()
-    
-    # Execute schema (can contain multiple CREATE TABLE statements)
-    for statement in schema_sql.split(";"):
-        if statement.strip():  # avoid empty statements
-            connection.execute(text(statement))
-    
-    print(" All tables created successfully from schema.sql!")
+        connection.execute(text(schema_sql))
+
+print(" Schema applied successfully!")
